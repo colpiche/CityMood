@@ -40,8 +40,8 @@ def timer_trigger(myTimer: func.TimerRequest) -> None:
 
 
 # HTTP trigger test
-@myApp.route(route="test_http_trigger", auth_level=func.AuthLevel.ANONYMOUS)
-def test_http_trigger(req: func.HttpRequest) -> func.HttpResponse:
+@myApp.route(route="coucou", auth_level=func.AuthLevel.ANONYMOUS)
+def coucou(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
 
     name = req.params.get('name')
