@@ -1,6 +1,9 @@
 import azure.functions as func
 import azure.durable_functions as df
 import logging
+import os
+from langchain_openai import AzureChatOpenAI
+from langchain_core.messages import HumanMessage, SystemMessage
 
 myApp = df.DFApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
@@ -60,3 +63,41 @@ def coucou(req: func.HttpRequest) -> func.HttpResponse:
              "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response.",
              status_code=200
         )
+
+
+# -------------------------Press article summarization-------------------------
+model = AzureChatOpenAI(
+    azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+    azure_deployment=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],
+    api_version=os.environ["AZURE_OPENAI_API_VERSION"],
+)
+
+@myApp.route(route="summarize", auth_level=func.AuthLevel.ANONYMOUS) 
+def summarize(req: func.HttpRequest) -> func.HttpResponse:
+
+    prompt = {
+        "system": """
+            Fais un résumé de 3 phrases en français de l'article suivant. Extrais 3 mots clés du texte.
+            Créé un prompt que l'on peut donner à une IA text to image pour générer une illutration de l'article qui se base sur le résumé et les mots-clé.
+            Ce prompt compote uniquement 20 mots-clé, doit pouvoir faire apparaitre des détails de l'article dans l'image et doit être accepté par les systèmes de sécurité de l'IA.
+        """,
+        "payload": """
+            The global climate crisis continues to pose significant challenges to ecosystems worldwide. 
+            Rising temperatures, extreme weather events, and shrinking ice caps have led to widespread 
+            concerns among scientists and policymakers alike. International efforts are underway to 
+            mitigate these effects, with many countries committing to reduce carbon emissions and 
+            promote renewable energy sources. However, progress remains slow, and the window for 
+            preventing irreversible damage is closing rapidly.
+        """
+    }
+
+    messages = [
+        SystemMessage(content=prompt["system"]),
+        HumanMessage(content=prompt["payload"]),
+    ]
+
+    response = model.invoke(messages)
+
+    prompt["response"] = str(response.content)
+
+    return func.HttpResponse(str(prompt), status_code=200)
