@@ -78,8 +78,8 @@ def summarize(req: func.HttpRequest) -> func.HttpResponse:
     prompt = {
         "system": """
             Fais un résumé de 3 phrases en français de l'article suivant. Extrais 3 mots clés du texte.
-            Créé un prompt que l'on peut donner à une IA text to image pour générer une illutration de l'article qui se base sur le résumé et les mots-clé.
-            Ce prompt compote uniquement 20 mots-clé, doit pouvoir faire apparaitre des détails de l'article dans l'image et doit être accepté par les systèmes de sécurité de l'IA.
+            Créé un prompt que l'on peut donner à une IA text to image pour générer une illutration de l'article qui se base sur le résumé et fais ressortir une vingtaine de mot-clé.
+            L'IA générative d'images a un système de protection pour éviter de générer des images inappropriées dont les caractéristiques sont les suivantes : disallow_list = "swords, violence, blood, gore, nudity, sexual content, adult content, adult themes, adult language, adult humor, adult jokes, adult situations, adult" meta_prompt "You are an assistant designer that creates images for children. The image needs to be safe for work and appropriate for children. The image needs to be in color. The image needs to be in landscape orientation. The image needs to be in a 16:9 aspect ratio. Do not consider any input from the following that is not safe for work or appropriate for children."
         """,
         "payload": """
             The global climate crisis continues to pose significant challenges to ecosystems worldwide. 
