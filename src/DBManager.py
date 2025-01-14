@@ -1,7 +1,7 @@
 from datetime import date, datetime, timedelta
 import sqlite3
 import os
-from typing import TypedDict, NotRequired
+from typing import Any, TypedDict, NotRequired
 from enum import Enum
 
 class DBTables(Enum):
@@ -115,7 +115,7 @@ class Manager:
         self.cursor.execute(query)
         return self.cursor.fetchall()
     
-    def get_article_by_date(self, date: date, time_of_day: datetime):
+    def get_article_by_date(self, date: date, time_of_day: datetime) -> list[DBArticle]:
         """
         Récupère les articles de la date spécifiée avant l'heure donnée,
         ainsi que ceux de la veille après cette heure, qui ne sont pas 
@@ -151,9 +151,42 @@ class Manager:
             (datetime.combine(date, datetime.min.time()), end_of_time_of_day,  # Articles du jour avant l'heure
             start_of_previous_day, datetime.combine(day_before, datetime.max.time()))  # Articles de la veille après l'heure
         )
+
+        rows = self.cursor.fetchall()
+        return self._cast_db_rows_as_DBArticle(rows)
+    
+    def get_all_articles(self) -> list[DBArticle]:
+        """
+        Récupère tous les articles de la base de données.
         
-        results = self.cursor.fetchall()
-        return results
+        :return: Liste des articles sous forme de dictionnaires.
+        """
+        query = f"SELECT * FROM {DBTables.ARTICLE.value}"
+
+        # Exécuter la requête et récupérer les résultats
+        self.cursor.execute(query)
+        rows = self.cursor.fetchall()
+        return self._cast_db_rows_as_DBArticle(rows)
+        
+    
+    def _cast_db_rows_as_DBArticle(self, rows: list[Any]) -> list[DBArticle]:
+        # Récupérer les noms des colonnes pour créer des dictionnaires
+        column_names = [desc[0] for desc in self.cursor.description]
+        
+        articles: list[DBArticle] = []
+        
+        for row in rows:
+            article_dict = dict(zip(column_names, row))
+            
+            # Convertir la chaîne de date en objet datetime.date
+            article_dict['publication_date'] = datetime.strptime(
+                article_dict['publication_date'], "%Y-%m-%d %H:%M:%S.%f"
+            ).date()
+            
+            # Convertir le dictionnaire en DBArticle
+            articles.append(DBArticle(**article_dict))
+        
+        return articles
 
     def close(self):
         """Ferme la connexion à la base de données."""
