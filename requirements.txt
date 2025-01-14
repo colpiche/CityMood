@@ -1,1 +1,2 @@
-langchain-openai
+langchain_core
+langchain_openai
