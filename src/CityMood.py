@@ -1,6 +1,12 @@
+from hmac import new
+import string
+import feedparser
 from DBManager import Manager, DBArticle, DBPrompt, DBDay, DBTables
 from datetime import datetime, timedelta, date
 import random
+from Scrapper import *
+
+news_feed = feedparser.parse('https://www.charentelibre.fr/actualite/rss.xml')
 
 db: Manager = Manager('citymood')
 
@@ -68,6 +74,7 @@ def insert_test_data():
         )
 
 if __name__ == '__main__':
-    insert_test_data()
+    # insert_test_data()
     articles = db.get_article_by_date(date(2025, 1, 9), datetime.strptime("02:00", "%H:%M"))
+    get_news("Angoulême", db, news_feed)
     db.close()
