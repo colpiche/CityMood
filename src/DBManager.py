@@ -193,3 +193,23 @@ class Manager:
         if self.connection:
             self.connection.close()
             print("Connexion à la base de données fermée.")
+            
+    def get_article_by_url(self, url: str) -> list[DBArticle]:
+        """
+        Vérifie si l'url rentré en paramètre est déjà enregistré dans 
+        la base de donné
+        
+        :param url: URL de l'article à vérifier.
+        """
+        
+        # Construire la requête SQL
+        query = f"""
+            SELECT a.*
+            FROM {DBTables.ARTICLE.value} a
+            WHERE a.url = ?
+        """
+        
+        # Exécuter la requête avec les plages de dates et heures
+        self.cursor.execute(query, (url,))
+        rows = self.cursor.fetchall()
+        return self._cast_db_rows_as_DBArticle(rows)
