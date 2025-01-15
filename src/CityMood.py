@@ -6,9 +6,22 @@ from datetime import datetime, timedelta, date
 import random
 from Scrapper import *
 
+import os
+from langchain_openai import AzureChatOpenAI
+from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.utils.utils import convert_to_secret_str
+import json
+
 news_feed = feedparser.parse('https://www.charentelibre.fr/actualite/rss.xml')
 
 db: Manager = Manager('citymood')
+
+gpt_model = AzureChatOpenAI(
+    azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+    azure_deployment=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],
+    api_version=os.environ["AZURE_OPENAI_API_VERSION"],
+    api_key=convert_to_secret_str(os.environ["AZURE_OPENAI_API_KEY"])
+)
 
 def insert_test_data():
     titles = [
@@ -72,6 +85,42 @@ def insert_test_data():
                 content=contents[i]
             )
         )
+
+def summarize_articles_by_gpt(articles: list[DBArticle]) -> str:
+    prompt = {
+        "system": """
+            Créé un prompt qui sera utilisé par une IA text-to-image pour créer une image qui met en scène les sujets
+            abordés dans les articles suivants.
+        """
+    }
+
+    messages = [
+        SystemMessage(content=prompt["system"]),
+        HumanMessage(content=serialize_articles(articles))
+    ]
+
+    response = gpt_model.invoke(messages)
+
+    return str(response.content)
+
+
+def serialize_articles(articles: list[DBArticle]) -> str:
+    """
+    Sérialise une liste de DBArticle en JSON avec uniquement les champs title, description et content.
+    
+    :param articles: Liste d'articles de type DBArticle.
+    :return: Chaîne JSON contenant uniquement les champs sélectionnés.
+    """
+    filtered_articles = [
+        {
+            'title': article['title'],
+            'description': article['description'],
+            'content': article['content']
+        }
+        for article in articles
+    ]
+    
+    return json.dumps(filtered_articles, ensure_ascii=False, separators=(',', ':'))
 
 if __name__ == '__main__':
     # insert_test_data()
