@@ -1,8 +1,5 @@
-import string
-import feedparser
-from DBManager import Manager, DBArticle, DBPrompt, DBDay, DBTables
-from datetime import datetime, timedelta, date
-import random
+from DBManager import Manager, DBArticle, DBTables
+from datetime import datetime
 
 def check_article_is_in_base_by_url(url:str, db: Manager) -> bool:
     if db.get_article_by_url(url) != []:

@@ -5,14 +5,13 @@ from datetime import datetime, timedelta, date
 import random
 from Scrapper import *
 from dotenv import load_dotenv
-
-load_dotenv()
-
 import os
 from langchain_openai import AzureChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.utils.utils import convert_to_secret_str
 import json
+
+load_dotenv()
 
 news_feed = feedparser.parse('https://www.charentelibre.fr/actualite/rss.xml')
 
@@ -129,3 +128,4 @@ if __name__ == '__main__':
     articles = db.get_article_by_date(date(2025, 1, 9), datetime.strptime("02:00", "%H:%M"))
     get_news("Angoulême", db, news_feed)
     db.close()
+
