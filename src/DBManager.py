@@ -73,7 +73,7 @@ class Manager:
             print(f"Dossier {self.db_folder} créé.")
 
         # # Connexion à la base de données
-        self.connection = sqlite3.connect(self.db_path, check_same_thread=False)
+        self.connection = sqlite3.connect(self.db_path)
         self.cursor = self.connection.cursor()
         print(f"Connexion à la base de données {self.db_name} établie.")
 
@@ -115,21 +115,20 @@ class Manager:
         self.cursor.execute(query)
         return self.cursor.fetchall()
     
-    def get_article_by_date(self, date: date, time_of_day: datetime) -> list[DBArticle]:
+    def get_article_by_date(self, date: date) -> list[DBArticle]:
         """
-        Récupère les articles de la date spécifiée avant l'heure donnée,
-        ainsi que ceux de la veille après cette heure, qui ne sont pas 
+        Récupère les articles de la date spécifiée avant 9h00,
+        ainsi que ceux de la veille 9h00, qui ne sont pas 
         déjà présents dans la table 'day'.
         
         :param date: Date pour laquelle récupérer les articles.
-        :param time_of_day: Heure limite pour séparer les articles.
         :return: Liste des articles correspondant aux critères.
         """
         # Calculer les plages de dates et heures
-        end_of_time_of_day = datetime.combine(date, time_of_day.time())
+        end_of_time_of_day = datetime.combine(date, datetime.strptime("09:00", "%H:%M").time())
         
         day_before = date - timedelta(days=1)
-        start_of_previous_day = datetime.combine(day_before, time_of_day.time())
+        start_of_previous_day = datetime.combine(day_before, datetime.strptime("09:00", "%H:%M").time())
         
         # Construire la requête SQL
         query = f"""
@@ -166,8 +165,7 @@ class Manager:
         # Exécuter la requête et récupérer les résultats
         self.cursor.execute(query)
         rows = self.cursor.fetchall()
-        return self._cast_db_rows_as_DBArticle(rows)
-        
+        return self._cast_db_rows_as_DBArticle(rows)     
     
     def _cast_db_rows_as_DBArticle(self, rows: list[Any]) -> list[DBArticle]:
         # Récupérer les noms des colonnes pour créer des dictionnaires
