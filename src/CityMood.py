@@ -7,9 +7,6 @@ from Scrapper import *
 import schedule
 from dotenv import load_dotenv
 import os
-from langchain_openai import AzureChatOpenAI
-from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_core.utils.utils import convert_to_secret_str
 import json
 
 load_dotenv()
@@ -17,13 +14,6 @@ load_dotenv()
 news_feed = feedparser.parse('https://www.charentelibre.fr/actualite/rss.xml')
 
 db: Manager = Manager('citymood')
-
-gpt_model = AzureChatOpenAI(
-    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-    azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"),
-    api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
-    api_key=convert_to_secret_str(str(os.getenv("AZURE_OPENAI_API_KEY")))
-)
 
 def insert_test_data():
     titles = [
@@ -88,22 +78,6 @@ def insert_test_data():
             )
         )
 
-def summarize_articles_by_gpt(articles: list[DBArticle]) -> str:
-    prompt = {
-        "system": """
-            Créé un prompt qui sera utilisé par une IA text-to-image pour créer une image qui met en scène les sujets
-            abordés dans les articles suivants.
-        """
-    }
-
-    messages = [
-        SystemMessage(content=prompt["system"]),
-        HumanMessage(content=serialize_articles(articles))
-    ]
-
-    response = gpt_model.invoke(messages)
-
-    return str(response.content)
 
 
 def serialize_articles(articles: list[DBArticle]) -> str:
