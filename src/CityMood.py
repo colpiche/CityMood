@@ -1,9 +1,10 @@
 from hmac import new
 import feedparser
 from DBManager import Manager, DBArticle, DBPrompt, DBDay, DBTables
-from datetime import datetime, timedelta, date
+from datetime import datetime, time, timedelta, date
 import random
 from Scrapper import *
+import schedule
 from dotenv import load_dotenv
 import os
 from langchain_openai import AzureChatOpenAI
@@ -123,9 +124,15 @@ def serialize_articles(articles: list[DBArticle]) -> str:
     
     return json.dumps(filtered_articles, ensure_ascii=False, separators=(',', ':'))
 
+def get_angouleme_s_news():
+    get_news("Angoulême", db, news_feed)
+    
 if __name__ == '__main__':
     # insert_test_data()
     articles = db.get_article_by_date(date(2025, 1, 9), datetime.strptime("02:00", "%H:%M"))
-    get_news("Angoulême", db, news_feed)
-    db.close()
+    schedule.every(10).minutes.do(get_angouleme_s_news)
+    schedule.every().day.at("9:00").do(get_angouleme_s_news)
 
+    while True:
+        schedule.run_pending()
+    db.close()

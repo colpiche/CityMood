@@ -13,7 +13,7 @@ def get_news(city:str, db: Manager, news_feed):
             if check_article_is_in_base_by_url(entry.link, db):
                 if ((city in entry.description) or (city in entry.title) or (city in entry.link) 
                     or (cityPurged in entry.description) or (cityPurged in entry.title) or (cityPurged in entry.link)):
-                    print(entry.title + "\n")
+                    print(f"Article {entry.title} n'est pas déjà dans la table")
                     db.insert_data(
                         DBTables.ARTICLE,
                         DBArticle(

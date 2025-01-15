@@ -73,7 +73,7 @@ class Manager:
             print(f"Dossier {self.db_folder} créé.")
 
         # # Connexion à la base de données
-        self.connection = sqlite3.connect(self.db_path)
+        self.connection = sqlite3.connect(self.db_path, check_same_thread=False)
         self.cursor = self.connection.cursor()
         print(f"Connexion à la base de données {self.db_name} établie.")
 
