@@ -1,6 +1,7 @@
+APScheduler
+feedparser
 langchain_core
 langchain_openai
-feedparser
-dotenv
+python-dotenv
+Requests
 schedule
-
