@@ -1,10 +1,12 @@
 from hmac import new
-import string
 import feedparser
 from DBManager import Manager, DBArticle, DBPrompt, DBDay, DBTables
 from datetime import datetime, timedelta, date
 import random
 from Scrapper import *
+from dotenv import load_dotenv
+
+load_dotenv()
 
 import os
 from langchain_openai import AzureChatOpenAI
@@ -17,10 +19,10 @@ news_feed = feedparser.parse('https://www.charentelibre.fr/actualite/rss.xml')
 db: Manager = Manager('citymood')
 
 gpt_model = AzureChatOpenAI(
-    azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
-    azure_deployment=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],
-    api_version=os.environ["AZURE_OPENAI_API_VERSION"],
-    api_key=convert_to_secret_str(os.environ["AZURE_OPENAI_API_KEY"])
+    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+    azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"),
+    api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+    api_key=convert_to_secret_str(str(os.getenv("AZURE_OPENAI_API_KEY")))
 )
 
 def insert_test_data():
