@@ -5,10 +5,14 @@ import logging
 class Publisher():
     def __init__(self, discord_webhook: str) -> None:
         self._discord_webhook: str = discord_webhook
+
         # Configuration du logger
         logging.basicConfig(
             level=logging.INFO,
-            format="%(asctime)s - %(levelname)s - %(message)s"
+            format="%(asctime)s - %(levelname)s - %(message)s",
+            handlers=[
+                logging.StreamHandler()
+            ]
         )
         self._logger = logging.getLogger(__name__)
 

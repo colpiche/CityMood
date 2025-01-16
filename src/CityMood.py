@@ -9,7 +9,6 @@ logging.basicConfig(
     level=logging.INFO,  # Niveau de log (DEBUG, INFO, WARNING, ERROR, CRITICAL)
     format="%(asctime)s - %(levelname)s - %(message)s",  # Format des logs
     handlers=[
-        logging.FileHandler("app.log"),  # Enregistrement des logs dans un fichier
         logging.StreamHandler()  # Affichage des logs dans la console
     ]
 )
