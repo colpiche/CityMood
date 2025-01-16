@@ -11,6 +11,7 @@ class DBTables(Enum):
 
 class DBArticle(TypedDict):
     id: NotRequired[int]
+    day_id: int
     publication_date: date
     url: str
     title: str
@@ -18,12 +19,13 @@ class DBArticle(TypedDict):
     content: str
 
 class DBPrompt(TypedDict):
+    id: NotRequired[int]
+    date_id: int
     text_used: str
     image_url: str
 
 class DBDay(TypedDict):
-    article_id: int
-    prompt_id: int
+    id: NotRequired[int]
     date: date
 
 class Manager:
@@ -34,22 +36,22 @@ class Manager:
         url TEXT NOT NULL,
         title TEXT NOT NULL,
         description TEXT,
-        content TEXT
+        content TEXT,
+        day_id INTEGER NOT NULL UNIQUE,
+        FOREIGN KEY (day_id) REFERENCES day(id) ON DELETE CASCADE
     '''
 
     _prompt_table_command: str = '''
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         text_used TEXT NOT NULL,
-        image_url TEXT
+        image_url TEXT,
+        day_id INTEGER NOT NULL,
+        FOREIGN KEY (day_id) REFERENCES day(id) ON DELETE CASCADE
     '''
 
     _day_table_command: str = '''
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        article_id INTEGER NOT NULL UNIQUE,
-        prompt_id INTEGER NOT NULL,
-        date DATE NOT NULL,
-        FOREIGN KEY (article_id) REFERENCES article(id) ON DELETE CASCADE,
-        FOREIGN KEY (prompt_id) REFERENCES prompt(id) ON DELETE CASCADE
+        date DATE NOT NULL
     '''
 
     def __init__(self, db_name: str):
@@ -84,7 +86,7 @@ class Manager:
         self.connection.commit()
         print(f"Table {table_name.value} créée ou déjà existante.")
 
-    def insert_data(self, table_name: DBTables, data: DBArticle | DBPrompt | DBDay) -> int | None:
+    def insert_data(self, table_name: DBTables, data: DBArticle | DBPrompt | DBDay) -> int:
         """
         Insère des données dans la table spécifiée.
         """
@@ -106,7 +108,7 @@ class Manager:
         self.connection.commit()
         print(f"Données insérées dans {table_name.value}.")
 
-        inserted_id = self.cursor.lastrowid
+        inserted_id = int(self.cursor.lastrowid) if self.cursor.lastrowid else -1
         return inserted_id
 
     def get_data(self, table_name: DBTables, columns="*"):
@@ -115,7 +117,7 @@ class Manager:
         self.cursor.execute(query)
         return self.cursor.fetchall()
     
-    def get_article_by_date(self, date: date) -> list[DBArticle]:
+    def get_article_by_date(self, id_day:int) -> list[DBArticle]:
         """
         Récupère les articles de la date spécifiée avant 9h00,
         ainsi que ceux de la veille 9h00, qui ne sont pas 
@@ -124,31 +126,19 @@ class Manager:
         :param date: Date pour laquelle récupérer les articles.
         :return: Liste des articles correspondant aux critères.
         """
-        # Calculer les plages de dates et heures
-        end_of_time_of_day = datetime.combine(date, datetime.strptime("09:00", "%H:%M").time())
-        
-        day_before = date - timedelta(days=1)
-        start_of_previous_day = datetime.combine(day_before, datetime.strptime("09:00", "%H:%M").time())
         
         # Construire la requête SQL
         query = f"""
             SELECT a.*
             FROM {DBTables.ARTICLE.value} a
-            LEFT JOIN {DBTables.DAY.value} d ON a.id = d.article_id
-            WHERE 
-                (
-                    (a.publication_date BETWEEN ? AND ?)
-                    OR 
-                    (a.publication_date BETWEEN ? AND ?)
-                )
-                AND d.article_id IS NULL
+            LEFT JOIN {DBTables.DAY.value} d ON a.day_id = d.id
+            WHERE d.id = ?
         """
         
         # Exécuter la requête avec les plages de dates et heures
         self.cursor.execute(
             query,
-            (datetime.combine(date, datetime.min.time()), end_of_time_of_day,  # Articles du jour avant l'heure
-            start_of_previous_day, datetime.combine(day_before, datetime.max.time()))  # Articles de la veille après l'heure
+            (id_day,)  # Articles de la veille après l'heure
         )
 
         rows = self.cursor.fetchall()
@@ -186,6 +176,25 @@ class Manager:
         
         return articles
 
+    def _cast_db_rows_as_DBDay(self, rows: list[Any]) -> list[DBDay]:
+        # Récupérer les noms des colonnes pour créer des dictionnaires
+        column_names = [desc[0] for desc in self.cursor.description]
+        
+        days: list[DBDay] = []
+        
+        for row in rows:
+            article_dict = dict(zip(column_names, row))
+            
+            # Convertir la chaîne de date en objet datetime.date
+            article_dict['date'] = datetime.strptime(
+                article_dict['date'], "%Y-%m-%d"
+            ).date()
+            
+            # Convertir le dictionnaire en DBArticle
+            days.append(DBDay(**article_dict))
+        
+        return days
+    
     def close(self):
         """Ferme la connexion à la base de données."""
         if self.connection:
@@ -211,3 +220,19 @@ class Manager:
         self.cursor.execute(query, (url,))
         rows = self.cursor.fetchall()
         return self._cast_db_rows_as_DBArticle(rows)
+    
+    def get_day_id_by_date(self, date:date) -> int:
+        query = f"""
+            SELECT a.*
+            FROM {DBTables.DAY.value} a
+            WHERE a.date = ?
+        """
+        
+        # Exécuter la requête avec les plages de dates et heures
+        self.cursor.execute(query, (date,))
+        rows = self.cursor.fetchall()
+        if (rows != []):
+            return self._cast_db_rows_as_DBDay(rows)[0]["id"]
+        else :
+            return(self.insert_data(DBTables.DAY, DBDay(date=date)))
+        #return self._cast_db_rows_as_DBArticle(rows)

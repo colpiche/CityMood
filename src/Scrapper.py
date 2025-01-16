@@ -16,7 +16,7 @@ class Scrapper():
         else: 
             return False
         
-    def get_news(self) -> None:
+    def get_news(self, current_day_id: int):
             cityPurged = self._city.lower()
             for entry in self._news_feed.entries:
                 if self.check_article_is_in_base_by_url(entry.link, self._db) == False:
@@ -26,6 +26,7 @@ class Scrapper():
                         self._db.insert_data(
                             DBTables.ARTICLE,
                             DBArticle(
+                                day_id = current_day_id,
                                 publication_date=datetime.now(),
                                 url=entry.link,
                                 title=entry.title,

@@ -18,7 +18,6 @@ angou_scrap : Scrapper = Scrapper('https://www.charentelibre.fr/actualite/rss.xm
 orchestrator : Orchestrator = Orchestrator(dalle_interface, db, gpt_interface, publisher, angou_scrap)
 
 if __name__ == '__main__':
-    # insert_test_data()
-    # articles = db.get_article_by_date(date(2025, 1, 9), datetime.strptime("02:00", "%H:%M"))
-    orchestrator.daily_publish()
+    orchestrator._daily_publish()
+    orchestrator.daily_routine()
     db.close()
