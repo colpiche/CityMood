@@ -1,5 +1,5 @@
 from datetime import date, datetime, timedelta
-import sqlite3
+import pyodbc
 import os
 from typing import Any, TypedDict, NotRequired
 from enum import Enum
@@ -31,26 +31,26 @@ class DBDay(TypedDict):
 class Manager:
 
     _article_table_command: str = '''
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id INT IDENTITY(1,1) PRIMARY KEY,
         publication_date DATE NOT NULL,
-        url TEXT NOT NULL,
-        title TEXT NOT NULL,
-        description TEXT,
-        content TEXT,
-        day_id INTEGER NOT NULL,
+        url NVARCHAR(MAX) NOT NULL,
+        title NVARCHAR(MAX) NOT NULL,
+        description NVARCHAR(MAX),
+        content NVARCHAR(MAX),
+        day_id INT NOT NULL,
         FOREIGN KEY (day_id) REFERENCES day(id) ON DELETE CASCADE
     '''
 
     _prompt_table_command: str = '''
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        text_used TEXT NOT NULL,
-        image_url TEXT,
-        day_id INTEGER NOT NULL,
+        id INT IDENTITY(1,1) PRIMARY KEY,
+        text_used NVARCHAR(MAX) NOT NULL,
+        image_url NVARCHAR(MAX) NOT NULL,
+        day_id INT NOT NULL,
         FOREIGN KEY (day_id) REFERENCES day(id) ON DELETE CASCADE
     '''
 
     _day_table_command: str = '''
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id INT IDENTITY(1,1) PRIMARY KEY,
         date DATE NOT NULL
     '''
 
@@ -59,29 +59,28 @@ class Manager:
         self.db_file: str = f'{self.db_name}.db'
         self.db_folder: str = os.path.join(os.path.dirname(__file__), '..', 'database')
         self.db_path: str = os.path.join(self.db_folder, self.db_file)
-        self.connection: sqlite3.Connection
-        self.cursor: sqlite3.Cursor
+        self.connection: pyodbc.Connection
+        self.cursor: pyodbc.Cursor
+        self.connecion_string: str = str(os.getenv("SQL_CONNECTION_STRING"))
         self._create_database()
+        self.create_table(DBTables.DAY, self._day_table_command)
         self.create_table(DBTables.ARTICLE, self._article_table_command)
         self.create_table(DBTables.PROMPT, self._prompt_table_command)
-        self.create_table(DBTables.DAY, self._day_table_command)
 
     def _create_database(self):
-        """Crée le dossier ../database si nécessaire et la base de données."""
-
-        # Définir le chemin complet vers la base de données
-        if not os.path.exists(self.db_folder):
-            os.makedirs(self.db_folder)
-            print(f"Dossier {self.db_folder} créé.")
-
         # # Connexion à la base de données
-        self.connection = sqlite3.connect(self.db_path)
+        self.connection = pyodbc.connect(self.connecion_string)
         self.cursor = self.connection.cursor()
         print(f"Connexion à la base de données {self.db_name} établie.")
 
     def create_table(self, table_name: DBTables, schema):
-        """Crée une table avec un schéma spécifié."""
-        query = f"CREATE TABLE IF NOT EXISTS {table_name.value} ({schema})"
+        """Crée une table avec un schéma spécifié, si elle n'existe pas."""
+        query = f"""
+            IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '{table_name.value}')
+            BEGIN
+                CREATE TABLE {table_name.value} ({schema});
+            END
+        """
         self.cursor.execute(query)
         self.connection.commit()
         print(f"Table {table_name.value} créée ou déjà existante.")
@@ -99,17 +98,33 @@ class Manager:
         #     print("La table et le format de données à y insérer ne correspondent pas.")
         #     return
 
+        # Conversion des données en colonnes et valeurs
         columns = list(data.keys())
         values = list(data.values())
-        
-        query = f"INSERT INTO {table_name.value} ({', '.join(columns)}) VALUES ({', '.join(['?'] * len(values))})"
-        
+
+        # Construction de la requête SQL avec des marqueurs de paramètres "?"
+        query = f"""
+            INSERT INTO {table_name.value} ({', '.join(columns)})
+            OUTPUT INSERTED.id
+            VALUES ({', '.join(['?' for _ in values])});
+        """
+
+        # Exécution de la requête avec les paramètres
         self.cursor.execute(query, values)
+
+        # Récupérer l'ID de la ligne insérée (pour les tables avec clé primaire auto-incrémentée)
+        inserted_id = self.cursor.fetchone()
+
         self.connection.commit()
         print(f"Données insérées dans {table_name.value}.")
 
-        inserted_id = int(self.cursor.lastrowid) if self.cursor.lastrowid else -1
-        return inserted_id
+        # Vérifier si un ID a été retourné
+        if inserted_id is None:
+            print("Erreur : aucun ID n'a été renvoyé.")
+            return -1
+
+        return inserted_id[0]
+
 
     def get_data(self, table_name: DBTables, columns="*"):
         """Récupère les données d'une table."""
@@ -166,11 +181,6 @@ class Manager:
         for row in rows:
             article_dict = dict(zip(column_names, row))
             
-            # Convertir la chaîne de date en objet datetime.date
-            article_dict['publication_date'] = datetime.strptime(
-                article_dict['publication_date'], "%Y-%m-%d %H:%M:%S.%f"
-            ).date()
-            
             # Convertir le dictionnaire en DBArticle
             articles.append(DBArticle(**article_dict))
         
@@ -184,11 +194,6 @@ class Manager:
         
         for row in rows:
             article_dict = dict(zip(column_names, row))
-            
-            # Convertir la chaîne de date en objet datetime.date
-            article_dict['date'] = datetime.strptime(
-                article_dict['date'], "%Y-%m-%d"
-            ).date()
             
             # Convertir le dictionnaire en DBArticle
             days.append(DBDay(**article_dict))
@@ -208,14 +213,14 @@ class Manager:
         
         :param url: URL de l'article à vérifier.
         """
-        
+
         # Construire la requête SQL
         query = f"""
             SELECT a.*
             FROM {DBTables.ARTICLE.value} a
             WHERE a.url = ?
         """
-        
+
         # Exécuter la requête avec les plages de dates et heures
         self.cursor.execute(query, (url,))
         rows = self.cursor.fetchall()
