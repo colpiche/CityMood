@@ -29,7 +29,7 @@ try:
     gpt_interface: GPTInterface = GPTInterface()
     logging.info("Interface GPT initialisée.")
 
-    publisher: Publisher = Publisher("https://discord.com/api/webhooks/1329063802205110407/2NbBEacCLp8H-21YU0eVUldCWvKsWBFKZRVEyFdvc9UAiFGz0tCTrTRjsI_EtLUO-nwh")
+    publisher: Publisher = Publisher(str(os.getenv("DISCORD_WEBHOOK")))
     logging.info("Publisher configuré avec le webhook Discord.")
 
     angou_scrap: Scrapper = Scrapper(
