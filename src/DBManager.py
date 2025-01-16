@@ -211,7 +211,7 @@ class Manager:
     
     def close(self):
         """Ferme la connexion à la base de données."""
-        if self.connection:
+        if not self.connection.closed:
             self.connection.close()
             print("Connexion à la base de données fermée.")
             
