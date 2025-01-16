@@ -1,6 +1,6 @@
 import logging
 from ast import Or
-from DBManager import Manager
+from DBManager import DBManager
 from Orchestrator import *
 from dotenv import load_dotenv
 
@@ -22,7 +22,7 @@ try:
     dalle_interface: DallEInterface = DallEInterface()
     logging.info("Interface DALL·E initialisée.")
 
-    db: Manager = Manager('citymood')
+    db: DBManager = DBManager('citymood')
     logging.info("Connexion à la base de données 'citymood' établie.")
 
     gpt_interface: GPTInterface = GPTInterface()

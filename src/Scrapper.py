@@ -1,13 +1,13 @@
 import feedparser
 import logging
 from datetime import datetime
-from DBManager import Manager, DBArticle, DBTables
+from DBManager import DBManager, DBArticle, DBTables
 
 class Scrapper():
-    def __init__(self, news_feeds_url: list[str], target_city: str, db: Manager) -> None:
+    def __init__(self, news_feeds_url: list[str], target_city: str, db: DBManager) -> None:
         self._news_feeds_url = news_feeds_url
         self._city: str = target_city
-        self._db: Manager = db
+        self._db: DBManager = db
 
         # Configuration du logger
         logging.basicConfig(
@@ -19,7 +19,7 @@ class Scrapper():
         )
         self._logger = logging.getLogger(__name__)
 
-    def check_article_is_in_base_by_url(self, url: str, db: Manager) -> bool:
+    def check_article_is_in_base_by_url(self, url: str, db: DBManager) -> bool:
         """
         Vérifie que l'article n'est pas déjà dans la base 
         de données en retournant True ou False.

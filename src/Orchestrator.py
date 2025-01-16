@@ -20,7 +20,7 @@ logging.basicConfig(
 )
 
 class Orchestrator:
-    def __init__(self, dallEInterface: DallEInterface, db: Manager, gptinterface: GPTInterface,
+    def __init__(self, dallEInterface: DallEInterface, db: DBManager, gptinterface: GPTInterface,
                  publisher: Publisher, scrapper: Scrapper) -> None:
         try:
             self._dallEInterface = dallEInterface
