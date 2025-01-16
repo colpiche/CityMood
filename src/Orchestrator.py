@@ -120,13 +120,13 @@ class Orchestrator():
         articles_of_the_day: list[DBArticle]= self._db.get_article_by_date(self._id_current_day)
         liens: str = ""
         for article in articles_of_the_day:
-            liens = liens + article["title"] + "\n"
+            liens = liens + "*" + article["title"] + "*" + "\n"
         # articles_of_the_day: list[DBArticle]= self._db.get_article_by_date((datetime.now() + timedelta(days=1)))
         prompt = self._insert_daily_prompt(articles_of_the_day)
-        self._publisher.publish(message = "Les articles d'Angoulême du jours :\n " +
-                                liens +
-                                prompt['image_url'])
         
+        self._publisher.publish(title = "Les articles d'Angoulême du jour :",
+                                message = liens,
+                                url = prompt['image_url'])
         
     def daily_routine(self):
         schedule.every(10).minutes.do(self._get_angouleme_s_news)
