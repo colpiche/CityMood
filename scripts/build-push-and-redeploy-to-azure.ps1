@@ -6,6 +6,7 @@ $acrName = "citymood"
 $acrUrl = "$acrName.azurecr.io"
 $imageName = "citymood-app"
 $taggedImage = "$acrUrl/$imageName"
+$containerApp = "ctrapp-citymood-prod-fr-01"
 
 function Execute-Command {
     param (
@@ -37,7 +38,7 @@ Execute-Command "az login"
 Execute-Command "az acr login --name $acrName"
 
 # Construction de l'image Docker
-Execute-Command "docker build -t $imageName ."
+Execute-Command "docker build -t $imageName ../"
 
 # Tag de l'image pour le push vers ACR
 Execute-Command "docker tag ${imageName}:latest $taggedImage"
@@ -46,15 +47,15 @@ Execute-Command "docker tag ${imageName}:latest $taggedImage"
 Execute-Command "docker push $taggedImage"
 
 # Récupération automatique de la révision actuelle
-$revision = az containerapp revision list --name $imageName --resource-group $resourceGroup --query "[0].name" -o tsv
+$revision = az containerapp revision list --name $containerApp --resource-group $resourceGroup --query "[0].name" -o tsv
 
 if ($revision) {
     Write-Host "Révision actuelle trouvée : $revision" -ForegroundColor Green
 
     # Redémarrage de la révision
-    Execute-Command "az containerapp revision restart --name $imageName --resource-group $resourceGroup --revision $revision"
+    Execute-Command "az containerapp revision restart --name $containerApp --resource-group $resourceGroup --revision $revision"
 } else {
-    Write-Host "Aucune révision trouvée pour l'application $imageName." -ForegroundColor Red
+    Write-Host "Aucune révision trouvée pour l'application $containerApp." -ForegroundColor Red
     exit 1
 }
 
