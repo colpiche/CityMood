@@ -40,29 +40,29 @@ class Scrapper():
                 cityPurged = self._city.lower()
 
                 for entry in news_feed.entries:
-                    if self.check_article_is_in_base_by_url(entry.link, self._db) == False:
+                    if not ((self._city in entry.description) or 
+                        (self._city in entry.title) or 
+                        (self._city in entry.link) or 
+                        (cityPurged in entry.description) or 
+                        (cityPurged in entry.title) or 
+                        (cityPurged in entry.link)):
+                        self._logger.info(f"Article '{entry.title}' ne concerne pas {self._city}. Ignoré.")
+                        continue
                         # Vérification si l'article concerne la ville cible
-                        if ((self._city in entry.description) or 
-                            (self._city in entry.title) or 
-                            (self._city in entry.link) or 
-                            (cityPurged in entry.description) or 
-                            (cityPurged in entry.title) or 
-                            (cityPurged in entry.link)):
-                            
-                            self._logger.info(f"Article '{entry.title}' n'est pas encore dans la base. Ajout à la base de données.")
-                            self._db.insert_data(
-                                DBTables.ARTICLE,
-                                DBArticle(
-                                    day_id=current_day_id,
-                                    publication_date=datetime.now(),
-                                    url=entry.link,
-                                    title=entry.title,
-                                    description=entry.description,
-                                    content=""
-                                )
+                    if self.check_article_is_in_base_by_url(entry.link, self._db) == False:
+                        
+                        self._logger.info(f"Article '{entry.title}' n'est pas encore dans la base. Ajout à la base de données.")
+                        self._db.insert_data(
+                            DBTables.ARTICLE,
+                            DBArticle(
+                                day_id=current_day_id,
+                                publication_date=datetime.now(),
+                                url=entry.link,
+                                title=entry.title,
+                                description=entry.description,
+                                content=""
                             )
-                        else:
-                            self._logger.info(f"Article '{entry.title}' ne concerne pas {self._city}. Ignoré.")
+                        )
             except Exception as e:
                 # Log en cas d'erreur lors du traitement du flux RSS
                 self._logger.error(f"Erreur lors de la récupération du flux RSS depuis {news_feed_url}: {str(e)}")
