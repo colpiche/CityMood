@@ -87,6 +87,7 @@ class Manager:
         print(f"Table {table_name.value} créée ou déjà existante.")
 
     def insert_data(self, table_name: DBTables, data: DBArticle | DBPrompt | DBDay) -> int:
+        self.connect()
         """
         Insère des données dans la table spécifiée.
         """
@@ -118,7 +119,8 @@ class Manager:
 
         self.connection.commit()
         print(f"Données insérées dans {table_name.value}.")
-
+        
+        self.close()
         # Vérifier si un ID a été retourné
         if inserted_id is None:
             print("Erreur : aucun ID n'a été renvoyé.")
@@ -126,14 +128,17 @@ class Manager:
 
         return inserted_id[0]
 
-
     def get_data(self, table_name: DBTables, columns="*"):
+        self.connect()
         """Récupère les données d'une table."""
         query = f"SELECT {columns} FROM {table_name.value}"
         self.cursor.execute(query)
-        return self.cursor.fetchall()
+        rows = self.cursor.fetchall()
+        self.close()
+        return rows
     
     def get_article_by_date(self, id_day:int) -> list[DBArticle]:
+        self.connect()
         """
         Récupère les articles de la date spécifiée avant 9h00,
         ainsi que ceux de la veille 9h00, qui ne sont pas 
@@ -158,9 +163,11 @@ class Manager:
         )
 
         rows = self.cursor.fetchall()
+        self.close()
         return self._cast_db_rows_as_DBArticle(rows)
     
     def get_all_articles(self) -> list[DBArticle]:
+        self.connect()
         """
         Récupère tous les articles de la base de données.
         
@@ -171,6 +178,7 @@ class Manager:
         # Exécuter la requête et récupérer les résultats
         self.cursor.execute(query)
         rows = self.cursor.fetchall()
+        self.close()
         return self._cast_db_rows_as_DBArticle(rows)     
     
     def _cast_db_rows_as_DBArticle(self, rows: list[Any]) -> list[DBArticle]:
@@ -208,6 +216,7 @@ class Manager:
             print("Connexion à la base de données fermée.")
             
     def get_article_by_url(self, url: str) -> list[DBArticle]:
+        self.connect()
         """
         Vérifie si l'url rentré en paramètre est déjà enregistré dans 
         la base de donné
@@ -225,9 +234,11 @@ class Manager:
         # Exécuter la requête avec les plages de dates et heures
         self.cursor.execute(query, (url,))
         rows = self.cursor.fetchall()
+        self.close()
         return self._cast_db_rows_as_DBArticle(rows)
     
     def get_day_id_by_date(self, date:date) -> int:
+        self.connect()
         query = f"""
             SELECT a.*
             FROM {DBTables.DAY.value} a
@@ -237,6 +248,7 @@ class Manager:
         # Exécuter la requête avec les plages de dates et heures
         self.cursor.execute(query, (date,))
         rows = self.cursor.fetchall()
+        self.close()
         if (rows != []):
             return self._cast_db_rows_as_DBDay(rows)[0]["id"]
         else :

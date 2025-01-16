@@ -67,26 +67,6 @@ class Orchestrator:
             logging.error(f"Erreur lors de la récupération des actualités : {e}")
             raise
 
-    # def _insert_daily_prompt(self, articles_of_the_day: list[DBArticle]) -> DBPrompt:
-    #     try:
-    #         logging.info("Insertion du daily prompt...")
-    #         painting_description: str = str(self._gptinterface.ask(
-    #             "Décris moi un tableau qui aurait été peint par un artiste dans un style réaliste suite à sa lecture de ces articles",
-    #             self.serialize_articles(articles_of_the_day)).content)
-            
-    #         dall_e_url = self._dallEInterface.generate_image(painting_description)
-    #         daily_prompt: DBPrompt = DBPrompt(
-    #             day_id=self._id_current_day, 
-    #             text_used=painting_description, 
-    #             image_url=str(dall_e_url.data[0].url)
-    #         )
-    #         daily_prompt["id"] = self._db.insert_data(DBTables.PROMPT, daily_prompt)
-    #         logging.info("Daily prompt inséré avec succès.")
-    #         return daily_prompt
-    #     except Exception as e:
-    #         logging.error(f"Erreur lors de l'insertion du daily prompt : {e}")
-    #         raise
-        
     def _insert_daily_prompt(self, articles_of_the_day: list[DBArticle]) -> DBPrompt:
         try:
             logging.info("Insertion du daily prompt...")

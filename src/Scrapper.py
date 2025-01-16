@@ -66,3 +66,4 @@ class Scrapper():
             except Exception as e:
                 # Log en cas d'erreur lors du traitement du flux RSS
                 self._logger.error(f"Erreur lors de la récupération du flux RSS depuis {news_feed_url}: {str(e)}")
+
