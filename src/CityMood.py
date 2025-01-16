@@ -1,30 +1,73 @@
+import logging
 from ast import Or
 from DBManager import Manager
 from Orchestrator import *
 from dotenv import load_dotenv
 
+# Configuration des logs
+logging.basicConfig(
+    level=logging.INFO,  # Niveau de log (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+    format="%(asctime)s - %(levelname)s - %(message)s",  # Format des logs
+    handlers=[
+        logging.FileHandler("app.log"),  # Enregistrement des logs dans un fichier
+        logging.StreamHandler()  # Affichage des logs dans la console
+    ]
+)
+
+# Chargement des variables d'environnement
 load_dotenv()
+logging.info("Variables d'environnement chargées.")
 
-dalle_interface : DallEInterface = DallEInterface()
+# Initialisation des interfaces et services
+try:
+    dalle_interface: DallEInterface = DallEInterface()
+    logging.info("Interface DALL·E initialisée.")
 
-db: Manager = Manager('citymood')
+    db: Manager = Manager('citymood')
+    logging.info("Connexion à la base de données 'citymood' établie.")
 
-gpt_interface : GPTInterface = GPTInterface()
+    gpt_interface: GPTInterface = GPTInterface()
+    logging.info("Interface GPT initialisée.")
 
-publisher : Publisher = Publisher("https://discord.com/api/webhooks/1329063802205110407/2NbBEacCLp8H-21YU0eVUldCWvKsWBFKZRVEyFdvc9UAiFGz0tCTrTRjsI_EtLUO-nwh")
+    publisher: Publisher = Publisher("https://discord.com/api/webhooks/1329063802205110407/2NbBEacCLp8H-21YU0eVUldCWvKsWBFKZRVEyFdvc9UAiFGz0tCTrTRjsI_EtLUO-nwh")
+    logging.info("Publisher configuré avec le webhook Discord.")
 
-angou_scrap : Scrapper = Scrapper(['https://www.charentelibre.fr/actualite/rss.xml',
-                                   'https://www.nouvelle-aquitaine.fr/liste-rss/naq_actualite',
-                                   'https://www.nouvelobs.com/festival-bd-angouleme/rss.xml',
-                                   'https://www.francebleu.fr/rss/limousin/a-la-une.xml',
-                                   'https://www.francebleu.fr/rss/la-rochelle/a-la-une.xml',
-                                   'https://www.francebleu.fr/rss/perigord/a-la-une.xml'], 
-                                  "Angoulême",
-                                  db)
+    angou_scrap: Scrapper = Scrapper(
+        [
+            'https://www.charentelibre.fr/actualite/rss.xml',
+            'https://www.nouvelle-aquitaine.fr/liste-rss/naq_actualite',
+            'https://www.nouvelobs.com/festival-bd-angouleme/rss.xml',
+            'https://www.francebleu.fr/rss/limousin/a-la-une.xml',
+            'https://www.francebleu.fr/rss/la-rochelle/a-la-une.xml',
+            'https://www.francebleu.fr/rss/perigord/a-la-une.xml'
+        ],
+        "Angoulême",
+        db
+    )
+    logging.info("Scrapper initialisé avec les flux RSS d'Angoulême.")
 
-orchestrator : Orchestrator = Orchestrator(dalle_interface, db, gpt_interface, publisher, angou_scrap)
+    orchestrator: Orchestrator = Orchestrator(dalle_interface, db, gpt_interface, publisher, angou_scrap)
+    logging.info("Orchestrator initialisé.")
 
+except Exception as e:
+    logging.error(f"Erreur lors de l'initialisation : {e}")
+    raise
+
+# Exécution principale
 if __name__ == '__main__':
-    orchestrator._daily_publish()
-    orchestrator.daily_routine()
-    db.close()
+    try:
+        logging.info("Début de l'exécution quotidienne.")
+
+        orchestrator._daily_publish()
+        logging.info("Publication quotidienne effectuée.")
+
+        orchestrator.daily_routine()
+        logging.info("Routine quotidienne effectuée.")
+
+    except Exception as e:
+        logging.error(f"Une erreur est survenue pendant l'exécution : {e}")
+        raise
+
+    finally:
+        db.close()
+        logging.info("Connexion à la base de données fermée.")
