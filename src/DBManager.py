@@ -62,13 +62,14 @@ class Manager:
         self.connection: pyodbc.Connection
         self.cursor: pyodbc.Cursor
         self.connecion_string: str = str(os.getenv("SQL_CONNECTION_STRING"))
-        self._create_database()
+        self.connect()
         self.create_table(DBTables.DAY, self._day_table_command)
         self.create_table(DBTables.ARTICLE, self._article_table_command)
         self.create_table(DBTables.PROMPT, self._prompt_table_command)
+        self.close()
 
-    def _create_database(self):
-        # # Connexion à la base de données
+    def connect(self):
+        # Connexion à la base de données
         self.connection = pyodbc.connect(self.connecion_string)
         self.cursor = self.connection.cursor()
         print(f"Connexion à la base de données {self.db_name} établie.")
