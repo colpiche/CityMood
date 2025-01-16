@@ -20,7 +20,7 @@ class DBArticle(TypedDict):
 
 class DBPrompt(TypedDict):
     id: NotRequired[int]
-    date_id: int
+    day_id: int
     text_used: str
     image_url: str
 
@@ -37,7 +37,7 @@ class Manager:
         title TEXT NOT NULL,
         description TEXT,
         content TEXT,
-        day_id INTEGER NOT NULL UNIQUE,
+        day_id INTEGER NOT NULL,
         FOREIGN KEY (day_id) REFERENCES day(id) ON DELETE CASCADE
     '''
 

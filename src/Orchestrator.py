@@ -1,4 +1,5 @@
 from datetime import date, datetime, timedelta
+from os import link
 from DallEInterface import *
 from DBManager import *
 from GPTInterface import *
@@ -9,12 +10,12 @@ import schedule
 
 class Orchestrator():
     def __init__(self, dallEInterface: DallEInterface, db:Manager, gptinterface: GPTInterface,
-                    publisher: Publisher, scrapper: Scrapper) -> None:
+                    publisher: Publisher, scrappers: list[Scrapper]) -> None:
         self._dallEInterface = dallEInterface
         self._db = db
         self._gptinterface = gptinterface
         self._publisher = publisher
-        self._scrapper = scrapper
+        self._scrappers = scrappers
         self._id_current_day = self._db.get_day_id_by_date(date.today())
         print(self._id_current_day)
         pass
@@ -101,7 +102,8 @@ class Orchestrator():
         return json.dumps(filtered_articles, ensure_ascii=False, separators=(',', ':'))
 
     def _get_angouleme_s_news(self) -> None:
-        self._scrapper.get_news(self._id_current_day)
+        for scrapper in self._scrappers:
+            scrapper.get_news(self._id_current_day)
         
     def _insert_daily_prompt(self, articles_of_the_day: list[DBArticle]) -> DBPrompt:
         painting_description: str = str(self._gptinterface.ask("Décris moi un tableau qui aurait été peint par un artiste dans un style réaliste suite à sa lecture de ces articles", self.serialize_articles(articles_of_the_day)).content)
@@ -116,10 +118,14 @@ class Orchestrator():
     def _daily_publish(self) -> None:
         self._get_angouleme_s_news()
         articles_of_the_day: list[DBArticle]= self._db.get_article_by_date(self._id_current_day)
-        print(articles_of_the_day)
+        liens: str = ""
+        for article in articles_of_the_day:
+            liens = liens + article["title"] + "\n"
         # articles_of_the_day: list[DBArticle]= self._db.get_article_by_date((datetime.now() + timedelta(days=1)))
         prompt = self._insert_daily_prompt(articles_of_the_day)
-        self._publisher.publish(message= prompt['text_used'] + "\n" + prompt['image_url'])
+        self._publisher.publish(message = "Les articles d'Angoulême du jours :\n " +
+                                liens +
+                                prompt['image_url'])
         
         
     def daily_routine(self):
